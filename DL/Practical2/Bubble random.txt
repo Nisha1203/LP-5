@@ -1,0 +1,89 @@
+%%writefile prac2a.cpp
+#include <iostream>
+#include <vector>
+#include <random>
+#include <omp.h>
+using namespace std;
+
+// Sequential bubble sort implementation
+void sequential_bubble_sort(vector<int>& arr) {
+    bool isSorted = false;
+    while (!isSorted) {
+        isSorted = true;
+        for (int i = 0; i < arr.size() - 1; ++i) {
+            if (arr[i] > arr[i + 1]) {
+                swap(arr[i], arr[i + 1]);
+                isSorted = false;
+            }
+        }
+    }
+}
+
+// Parallel bubble sort implementation using odd-even transposition
+void parallel_bubble_sort(vector<int>& arr) {
+    bool isSorted = false;
+    while (!isSorted) {
+        isSorted = true;
+        #pragma omp parallel for
+        for (int i = 0; i < arr.size() - 1; i += 2) {
+            if (arr[i] > arr[i + 1]) {
+                swap(arr[i], arr[i + 1]);
+                isSorted = false;
+            }
+        }
+        #pragma omp parallel for
+        for (int i = 1; i < arr.size() - 1; i += 2) {
+            if (arr[i] > arr[i + 1]) {
+                swap(arr[i], arr[i + 1]);
+                isSorted = false;
+            }
+        }
+    }
+}
+
+int main() {
+    int n;
+    cout << "Enter the number of elements in the array: ";
+    cin >> n;
+
+    // Generate random numbers
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<> dis(1, 100); // Range of random numbers
+
+    vector<int> arr(n);
+    cout << "Generated " << n << " random elements:\n";
+    for (int i = 0; i < n; ++i) {
+        arr[i] = dis(gen);
+        cout << "Element " << i + 1 << ": " << arr[i] << endl;
+    }
+
+    // Copy the original array for sequential sorting
+    vector<int> seq_arr = arr;
+
+    double start, end;
+
+    // Sort sequentially and measure time
+    start = omp_get_wtime();
+    sequential_bubble_sort(seq_arr);
+    cout << "Sorted array using sequential bubble sort: ";
+    for (int i = 0; i < n; ++i) {
+        cout << seq_arr[i] << " ";
+    }
+    cout << endl;
+    end = omp_get_wtime();
+    cout << "Sequential bubble sort time: " << end - start << " seconds" << endl;
+
+    // Sort in parallel and measure time
+    start = omp_get_wtime();
+    parallel_bubble_sort(arr);
+    cout << "Sorted array using parallel bubble sort: ";
+    for (int i = 0; i < n; ++i) {
+        cout << arr[i] << " ";
+    }
+    cout << endl;
+    end = omp_get_wtime();
+    cout << "Parallel bubble sort time: " << end - start << " seconds" << endl;
+
+    return 0;
+}
